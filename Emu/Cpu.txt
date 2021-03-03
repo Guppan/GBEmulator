@@ -1,0 +1,12 @@
+
+Instruktioner:
+
+	nästa instruktion hämtas från adressen reg.PC
+	instruktionen kan vara antingen 1 eller 2 bytes.
+
+	en instruktion har följande komponenter:
+		instruktion som ska utföras t.ex. LD
+		antal argument till instruktionen. Dessa är 0, 1 eller 2
+		antal klockcykler som instruktionen tar t.ex. 4
+
+	{instruction, nr. arguments, clock-cycles}
