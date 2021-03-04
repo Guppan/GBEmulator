@@ -32,6 +32,9 @@
     <ClInclude Include="Cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Typedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Cpu.txt">

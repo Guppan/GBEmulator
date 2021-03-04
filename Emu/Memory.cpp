@@ -2,31 +2,31 @@
 
 
 Memory::Memory()
-	: memory{ std::make_unique<unsigned char[]>(0xFFFF) }
+	: memory{ std::make_unique<BYTE[]>(0x10000) }
 {}
 
 
 // Reads a byte from 'address'.
-char Memory::read_byte(const short address) const {
+BYTE Memory::read_byte(const WORD address) const {
 	return memory[address];
 }
 
 
 // Reads a word starting from 'address'.
-short Memory::read_word(const short address) const {
+WORD Memory::read_word(const WORD address) const {
 	return ((memory[address + 1] << 8) | memory[address]);
 }
 
 
 // Write a byte to 'address'.
-void Memory::write_byte(const short address, const unsigned char value) {
+void Memory::write_byte(const WORD address, const BYTE value) {
 	memory[address] = value;
 }
 
 
 // Write a word starting at 'address'.
-void Memory::write_word(short address, const short value) {
-	memory[address++] = value;
+void Memory::write_word(WORD address, const WORD value) {
+	memory[address++] = static_cast<BYTE>(value);
 	memory[address] = (value >> 8);
 }
 

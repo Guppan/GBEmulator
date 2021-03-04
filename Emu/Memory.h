@@ -1,4 +1,7 @@
-#pragma once
+#ifndef MEMORY_H
+#define MEMORY_H
+
+#include "Typedefs.h"
 
 #include <memory>
 
@@ -8,12 +11,16 @@ public:
 	Memory();
 	~Memory() = default;
 
-	char read_byte(const short address) const;
-	short read_word(const short address) const;
+	BYTE read_byte(const WORD address) const;
+	WORD read_word(const WORD address) const;
 
-	void write_byte(const short address, const unsigned char value);
-	void write_word(short address, const short value);
+	void write_byte(const WORD address, const BYTE value);
+	void write_word(WORD address, const WORD value);
+
+	BYTE& operator[](const WORD address);
+	const BYTE& operator[](const WORD address) const;
 private:
-	std::unique_ptr<unsigned char[]> memory;
+	std::unique_ptr<BYTE[]> memory;
 };
 
+#endif

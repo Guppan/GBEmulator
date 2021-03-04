@@ -1,50 +1,52 @@
-#pragma once
+#ifndef CPU_H
+#define CPU_H
 
 #include "Memory.h"
+#include "Typedefs.h"
 
 struct Register {
 	union {
 		struct {
-			unsigned char F;
-			unsigned char A;
+			BYTE F;
+			BYTE A;
 		};
-		unsigned short AF;
+		WORD AF;
 	};
 	union {
 		struct {
-			unsigned char C;
-			unsigned char B;
+			BYTE C;
+			BYTE B;
 		};
-		unsigned short BC;
+		WORD BC;
 	};
 	union {
 		struct {
-			unsigned char E;
-			unsigned char D;
+			BYTE E;
+			BYTE D;
 		};
-		unsigned short DE;
+		WORD DE;
 	};
 	union {
 		struct {
-			unsigned char L;
-			unsigned char H;
+			BYTE L;
+			BYTE H;
 		};
-		unsigned short HL;
+		WORD HL;
 	};
 
-	unsigned short SP; // Stack pointer
-	unsigned short PC; // Program counter
+	WORD SP; // Stack pointer
+	WORD PC; // Program counter
 };
 
 union StatusRegister {
 	struct {
-		unsigned char unused : 4;
-		unsigned char C : 1; // Carry flag
-		unsigned char H : 1; // Half-carry flag
-		unsigned char N : 1; // Subtract flag
-		unsigned char Z : 1; // Zero flag
+		BYTE unused : 4;
+		BYTE C : 1; // Carry flag
+		BYTE H : 1; // Half-carry flag
+		BYTE N : 1; // Subtract flag
+		BYTE Z : 1; // Zero flag
 	};
-	unsigned char status;
+	BYTE status;
 };
 
 class Cpu
@@ -58,5 +60,9 @@ private:
 	StatusRegister status_register;
 
 	Memory& memory;
+	
+	BYTE read_byte_increment_PC();
+	WORD read_word_increment_PC();
 };
 
+#endif
