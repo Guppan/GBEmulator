@@ -10,3 +10,8 @@ Instruktioner:
 		antal klockcykler som instruktionen tar t.ex. 4
 
 	{instruction, nr. arguments, clock-cycles}
+
+
+	skulle kunna göra en array av funktionspekare.
+	då skulle alla funktioner ha samma typ av returvärde och argument.
+	kan ha en textfil som läses in vid skapandet av cpu och fyller arrayen med funktionspekare och argument.

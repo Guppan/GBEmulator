@@ -1,7 +1,9 @@
 #include "pch.h"
 #include "../Emu/Memory.h"
+#include "../Emu/Cpu.h"
 
 Memory mem;
+Cpu cpu{ mem };
 
 TEST(MemoryTest, WriteReadBytes) {
 	for (WORD i{ 0x0000 }; i < 0xFFFF; ++i) {

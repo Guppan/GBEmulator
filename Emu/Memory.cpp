@@ -6,8 +6,14 @@ Memory::Memory()
 {}
 
 
-// Reads a byte from 'address'.
-BYTE Memory::read_byte(const WORD address) const {
+// Returns a read-only byte at 'address'.
+BYTE Memory::operator[](const WORD address) const {
+	return memory[address];
+}
+
+
+// Returns a r/w reference to a byte at 'address'.
+BYTE& Memory::operator[](const WORD address) {
 	return memory[address];
 }
 
@@ -18,16 +24,8 @@ WORD Memory::read_word(const WORD address) const {
 }
 
 
-// Write a byte to 'address'.
-void Memory::write_byte(const WORD address, const BYTE value) {
-	memory[address] = value;
-}
-
-
 // Write a word starting at 'address'.
 void Memory::write_word(WORD address, const WORD value) {
 	memory[address++] = static_cast<BYTE>(value);
 	memory[address] = (value >> 8);
 }
-
-
