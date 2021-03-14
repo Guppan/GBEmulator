@@ -11,13 +11,13 @@ public:
 	Memory();
 	~Memory() = default;
 
-	BYTE operator[](const WORD address) const;
-	BYTE& operator[](const WORD address);
+	u8 operator[](const u16 address) const;
+	u8& operator[](const u16 address);
 
-	WORD read_word(const WORD address) const;
-	void write_word(WORD address, const WORD value);
+	u16 read_word(const u16 address) const;
+	void write_word(u16 address, const u16 value);
 private:
-	std::unique_ptr<BYTE[]> memory;
+	std::unique_ptr<u8[]> memory;
 };
 
 #endif

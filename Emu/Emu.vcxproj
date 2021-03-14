@@ -149,14 +149,17 @@
     <ClCompile Include="Cpu.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Memory.cpp" />
+    <ClCompile Include="OpParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cpu.h" />
     <ClInclude Include="Memory.h" />
+    <ClInclude Include="OpParser.h" />
     <ClInclude Include="Typedefs.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Cpu.txt" />
+    <Text Include="opcodes.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

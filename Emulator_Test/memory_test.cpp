@@ -6,12 +6,12 @@ Memory mem;
 Cpu cpu{ mem };
 
 TEST(MemoryTest, WriteReadBytes) {
-	for (WORD i{ 0x0000 }; i < 0xFFFF; ++i) {
-		mem.write_byte(i, static_cast<BYTE>(i));
+	for (u16 i{ 0x0000 }; i < 0xFFFF; ++i) {
+		mem.write_byte(i, static_cast<u8>(i));
 	}
 
-	for (WORD i{ 0x0000 }; i < 0xFFFF; ++i) {
-		ASSERT_EQ(mem.read_byte(i), static_cast<BYTE>(i));
+	for (u16 i{ 0x0000 }; i < 0xFFFF; ++i) {
+		ASSERT_EQ(mem.read_byte(i), static_cast<u8>(i));
 	}
 }
 
