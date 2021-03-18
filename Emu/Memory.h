@@ -20,4 +20,19 @@ private:
 	std::unique_ptr<u8[]> memory;
 };
 
+
+// FFE0 - FFFF	internal cpu ram
+
+// FEA0 - FEFF	prohibited area
+
+// E000 - FDFF	prohibited area - echo of work ram area
+
+// C000 - CFFF	work ram area
+
+// A000 - BFFF	external expansion ram area
+
+// 8000 - 9FFF	video ram
+
+// 0000 - 7FFF	rom area
+
 #endif

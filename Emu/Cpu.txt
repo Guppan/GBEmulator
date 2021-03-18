@@ -15,3 +15,23 @@ Instruktioner:
 	skulle kunna göra en array av funktionspekare.
 	då skulle alla funktioner ha samma typ av returvärde och argument.
 	kan ha en textfil som läses in vid skapandet av cpu och fyller arrayen med funktionspekare och argument.
+
+
+	
+	-----------------------------------------------------------------------------------------------------------
+
+	vilka olika addressing modes finns det?
+
+	implied	- data finns i instruktionen t.ex. NOP eller INC B
+
+	immediate - data anges direkt efter opcode t.ex. ADD A, $02
+
+	register - data anges direkt efter
+
+
+	NOP
+	
+	LD A, $02
+
+	LD A, B
+

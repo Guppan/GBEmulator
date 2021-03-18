@@ -146,19 +146,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bus.cpp" />
+    <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Cpu.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MBC1.cpp" />
     <ClCompile Include="Memory.cpp" />
     <ClCompile Include="OpParser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bus.h" />
+    <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Cpu.h" />
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="Mapper.h" />
+    <ClInclude Include="MBC1.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="OpParser.h" />
     <ClInclude Include="Typedefs.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Cpu.txt" />
+    <Text Include="cycles.txt" />
     <Text Include="opcodes.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

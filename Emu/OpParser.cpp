@@ -5,12 +5,14 @@
 #include <iostream>
 
 // ------------- Constants -------------
-const std::string FILE_NAME{ "opcodes.txt" };
+const std::string CYCLE_NAME{ "cycles.txt" };
+const std::string OPCODE_NAME{ "opcodes.txt" };
 // -------------------------------------
 
 OpParser::OpParser(Cpu& _cpu, ConstNums& CONST_NUMS)
 	: cpu{ _cpu }, c_nums{ CONST_NUMS }
 {
+	parse_cycles();
 	parse_instructions();
 }
 
@@ -30,6 +32,25 @@ u16 OpParser::parse_opcode(const std::string& str) const {
 	return opcode;
 }
 
+
+void OpParser::parse_cycles() {
+	std::ifstream input_stream{ CYCLE_NAME, std::ios::in };
+	std::string line;
+
+	u16 index{ 0x0000 };
+	while (std::getline(input_stream, line)) {
+		std::stringstream stream;
+		stream.str(line);
+
+		for (u16 offset{ 0x0000 }; offset < 0x0010; ++offset) {
+			stream >> cpu.cycle_matrix[index + offset];
+		}
+		
+		index += 0x0010;
+	}
+}
+
+
 void OpParser::parse_instructions() {
 	typedef void(Cpu::* BytePtr)(u8&, const u8&);	// 8bit function pointer.
 	typedef void(Cpu::* WordPtr)(u16&, const u16&); // 16bit function pointer.
@@ -40,9 +61,9 @@ void OpParser::parse_instructions() {
 		{"sub",& Cpu::sub_byte},    {"sbc", &Cpu::sub_byte_c},  {"and", &Cpu::and_byte},
 		{"or", &Cpu::or_byte},      {"xor", &Cpu::xor_byte},    {"cp", &Cpu::cp_byte},
 		{"inc", &Cpu::inc_byte},    {"dec", &Cpu::dec_byte},    {"lds",&Cpu::load_byte_switch},
-		{"tst", &Cpu::test_bit},    {"rst", &Cpu::reset_bit},   {"rot", &Cpu::rotate_byte},
+		{"tst", &Cpu::test_bit},    {"rst", &Cpu::reset_bit},   {"rot", &Cpu::rotate},
 		{"sft", &Cpu::shift_byte},  {"swp", &Cpu::swap_nibble}, {"alu", &Cpu::alu_byte_imm},
-		{"set", &Cpu::set_bit}
+		{"set", &Cpu::set_bit},     {"ldmem", &Cpu::load_byte_mem}
 	};
 
 	const std::map<std::string, WordPtr> func_word_map{
@@ -66,8 +87,6 @@ void OpParser::parse_instructions() {
 	const std::map<std::string, u8*> register_8bit_map{
 		{"A", &cpu.reg.A}, {"B", &cpu.reg.B}, {"C", &cpu.reg.C}, {"D", &cpu.reg.D},
 		{"E", &cpu.reg.E}, {"F", &cpu.reg.F}, {"H", &cpu.reg.H}, {"L", &cpu.reg.L},
-		{"(BC)", &cpu.memory[cpu.reg.BC]},    {"(DE)", &cpu.memory[cpu.reg.DE]},
-		{"(HL)", &cpu.memory[cpu.reg.HL]},    {"OF", &cpu.memory[0xFF00 + cpu.reg.C]},
 
 		{"0", &c_nums.b0}, {"1", &c_nums.b1}, {"2", &c_nums.b2}, {"3", &c_nums.b3},
 		{"4", &c_nums.b4}, {"5", &c_nums.b5}, {"6", &c_nums.b6}, {"7", &c_nums.b7},
@@ -83,7 +102,7 @@ void OpParser::parse_instructions() {
 		{"...",& c_nums.w0}
 	};
 	
-	std::ifstream input_stream{ FILE_NAME, std::ios::in };
+	std::ifstream input_stream{ OPCODE_NAME, std::ios::in };
 	std::string line;
 
 	while (std::getline(input_stream, line)) {
@@ -112,6 +131,6 @@ void OpParser::parse_instructions() {
 			instruction = std::bind(func, &cpu);
 		}
 
-		cpu.instr_op[parse_opcode(_opcode)] = instruction;
+		cpu.op_matrix[parse_opcode(_opcode)] = instruction;
 	}
 }

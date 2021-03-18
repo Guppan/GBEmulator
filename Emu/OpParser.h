@@ -18,6 +18,7 @@ private:
 	u16 string_to_word(const std::string&) const;
 	u16 parse_opcode(const std::string&) const;
 
+	void parse_cycles();
 	void parse_instructions();
 
 	template<typename T>
