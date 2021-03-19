@@ -15,7 +15,7 @@ public:
 
 	void load_cartridge(const std::string&);
 
-	u8 read_byte(const u16) override;
+	u8 read_byte(const u16) const override;
 	void write_byte(const u16, const u8) override;
 #ifndef _DEBUG
 private:
@@ -30,8 +30,8 @@ private:
 	unsigned set_rom_size(const u8);
 	void set_ram_size(const u8);
 
-	u8 read_from_rom(const u16);
-	u8 read_from_ram(const u16);
+	u8 read_from_rom(const u16) const;
+	u8 read_from_ram(const u16) const;
 	void write_to_mapper(const u16, const u8);
 	void write_to_ram(const u16, const u8);
 	void update_offset();

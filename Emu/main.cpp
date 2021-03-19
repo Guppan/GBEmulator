@@ -9,6 +9,7 @@
 int main() {
 	using namespace std;
 
+	u8 fg[0x100000];
 
 	return 0;
 }

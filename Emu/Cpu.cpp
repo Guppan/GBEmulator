@@ -1,10 +1,14 @@
 #include "Cpu.h"
-#include "OpParser.h"
 #include "Bus.h"
 
+#include <fstream>
+#include <map>
 #include <iostream>
 
 // ------ Constants ------------------------------------------
+// Name of the text file containing cycles for instructions.
+const std::string CYCLE_FILE{ "cycles.txt" };
+
 // Used primarily in method 'set_flags' to indicate
 // that an argument is unused.
 const bool UNUSED{ false };
@@ -12,31 +16,18 @@ const bool UNUSED{ false };
 // Used to indicate wheter a bit is set or cleared.
 const bool SET_BIT{ true };
 const bool CLEAR_BIT{ false };
-
-ConstNums CONST_NUMS{
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-	0x0000, 0x0001, 0x0002, 0x0003,
-	0x0004, 0x0005, 0x0006, 0x0007
-};
 // -----------------------------------------------------------
 
 
 Cpu::Cpu() :
 	reg{},
-	clock_cyles{},
-	halt{ false },
-	interrupt{ false }
+	clock_cyles{}
 {
-	reg.D = 0x01;
-	reg.B = 0x11;
-	OpParser par{ *this, CONST_NUMS };
-	std::cout << "before fn call\nD : " << reg.D << "   -   B : " << reg.B << std::endl;
-	op_matrix[0x50]();
-	std::cout << "after fn call\nD : " << reg.D << "   -   B : " << reg.B << std::endl;
 }
 
 
 void Cpu::read_opcode() {
+
 	/*
 	* läs instruktion från adress 'PC'.
 	* unsigned char opcode = memory.read_byte(reg.PC);
@@ -51,10 +42,17 @@ void Cpu::read_opcode() {
 	* }
 
 	*/
+	u8 opcode = read_byte_inc_PC();
+	if (opcode != 0xCB) {
+
+	}
+	else {
+		opcode = read_byte_inc_PC();
+	}
 }
 
 
-u8 Cpu::read_byte(const u16 address) {
+u8 Cpu::read_byte(const u16 address) const {
 	return bus->read_byte(address);
 }
 
@@ -63,7 +61,13 @@ void Cpu::write_byte(const u16 address, const u8 data) {
 }
 
 
-void Cpu::load_instruction_array() {
+
+void Cpu::init_cycle_matrix() {
+	std::ifstream file{ CYCLE_FILE , std::ios::in};
+
+	for (u16 idx = 0x0000; idx < 0x0200; ++idx) {
+		file >> cycle_matrix[idx];
+	}
 }
 
 
@@ -90,8 +94,7 @@ u16 Cpu::read_word_inc_PC() {
 
 
 
-
-void Cpu::load(const u8 opcode) {
+void Cpu::regular_op(const u8 opcode) {
 	static const std::map<u8, u8&> reg_map{
 		{0x07, reg.A}, {0x00, reg.B}, {0x01, reg.C}, {0x02, reg.D},
 		{0x03, reg.E}, {0x04, reg.H}, {0x05, reg.L}
@@ -104,6 +107,30 @@ void Cpu::load(const u8 opcode) {
 	switch (code) {
 	case 0x00: {
 		switch (right_opr) {
+		case 0x00: {
+			switch (left_opr) {
+			case 0x00: { /*NOP*/ } break;					// nop
+			case 0x01: { store_sp(); } break;				// ld (nn), sp
+			case 0x02: { stop_cpu(); } break;
+			case 0x03: { jump_relative(); } break;			// jr e
+			case 0x04: { jump_relative_cp(0x00); } break;	// jr cc, e
+			case 0x05: { jump_relative_cp(0x01); } break;	// jr cc, e
+			case 0x06: { jump_relative_cp(0x02); } break;	// jr cc, e
+			case 0x07: { jump_relative_cp(0x03); } break;	// jr cc, e
+			}
+		} break;
+		case 0x01: {
+			switch (left_opr) {
+			case 0x00: { reg.BC = read_word_inc_PC(); } break;	// ld bc, nn
+			case 0x01: { add_word(reg.BC); } break;
+			case 0x02: { reg.DE = read_word_inc_PC(); } break;	// ld de, nn
+			case 0x03: { add_word(reg.DE); } break;
+			case 0x04: { reg.HL = read_word_inc_PC(); } break;	// ld hl, nn
+			case 0x05: { add_word(reg.HL); } break;
+			case 0x06: { reg.SP = read_word_inc_PC(); } break;	// ld sp, nn
+			case 0x07: { add_word(reg.SP); } break;
+			}
+		} break;
 		case 0x02: {
 			switch (left_opr) {
 			case 0x00: { write_byte(reg.BC, reg.A); } break;
@@ -116,89 +143,68 @@ void Cpu::load(const u8 opcode) {
 			case 0x07: { reg.A = read_byte(reg.HL--); } break;
 			}
 		} break;
+		case 0x03: {
+			switch (left_opr) {
+			case 0x00: { ++reg.BC; } break;
+			case 0x01: { --reg.BC; } break;
+			case 0x02: { ++reg.DE; } break;
+			case 0x03: { --reg.DE; } break;
+			case 0x04: { ++reg.HL; } break;
+			case 0x05: { --reg.HL; } break;
+			case 0x06: { ++reg.SP; } break;
+			case 0x07: { --reg.SP; } break;
+			}
+		} break;
+		case 0x04: {
+			switch (left_opr) {
+			case 0x06: { write_byte(reg.HL, inc(read_byte(reg.HL))); } break;
+			default: { reg_map.at(left_opr) = inc(reg_map.at(left_opr)); } break;					// inc r
+			}
+		} break;
+		case 0x05: {
+			switch (left_opr) {
+			case 0x06: { write_byte(reg.HL, dec(read_byte(reg.HL))); } break;
+			default: { reg_map.at(left_opr) = dec(reg_map.at(left_opr)); } break;					// dec r
+			}
+		} break;
 		case 0x06: {
 			switch (left_opr) {
 			case 0x06: { write_byte(reg.HL, read_byte_inc_PC()); } break;
 			default: { reg_map.at(left_opr) = read_byte_inc_PC(); } break;
 			}
 		} break;
-		default: { throw("Illegal right operand! - fn() = load, 00 XXX ..."); } break;
+		case 0x07: {
+			switch (left_opr) {
+			case 0x00: { reg.A = rotate(reg.A, 0x00); } break;	// rlc r
+			case 0x01: { reg.A = rotate(reg.A, 0x02); } break;	// rrc r
+			case 0x02: { reg.A = rotate(reg.A, 0x01); } break;	// rl  r
+			case 0x03: { reg.A = rotate(reg.A, 0x03); } break;	// rr  r
+			case 0x04: { daa(); } break;
+			case 0x05: { cpl(); } break;
+			case 0x06: { scf(); } break;
+			case 0x07: { ccf(); } break;
+			}
+		} break;
 		}
 	} break;
+
 	case 0x01: {
-		if (right_opr == 0x06) {
-			reg_map.at(left_opr) = read_byte(reg.HL);
-		}
-		else if (left_opr == 0x06) {
-			write_byte(reg.HL, reg_map.at(right_opr));
-		}
-		else {
-			reg_map.at(left_opr) = reg_map.at(right_opr);
-		}
-	} break;
-	case 0x03: {
 		switch (right_opr) {
-		case 0x00: {
+		case 0x06: {
 			switch (left_opr) {
-			case 0x04: { write_byte(0xFF00 + read_byte_inc_PC(), reg.A); } break;
-			case 0x06: { reg.A = read_byte(0xFF00 + read_byte_inc_PC()); } break;
-			default: { throw("Illegal left operand! - fn() = load, 11 ... 000"); } break;
+			case 0x06: { halt_cpu(); } break;
+			default: {reg_map.at(left_opr) = read_byte(reg.HL); } break;
 			}
 		} break;
-		case 0x02: {
+		default: {
 			switch (left_opr) {
-			case 0x04: { write_byte(0xFF00 + reg.C, reg.A); } break;
-			case 0x05: { reg.A = read_byte(read_word_inc_PC()); } break;
-			case 0x06: { reg.A = read_byte(0xFF00 + reg.C); } break;
-			case 0x07: { write_byte(read_word_inc_PC(), reg.A); } break;
-			default: { throw("Illegal left operand! - fn() = load, 11 ... 010"); } break;
+			case 0x06: {write_byte(reg.HL, reg_map.at(right_opr)); } break;
+			default: {reg_map.at(left_opr) = reg_map.at(right_opr); } break;
 			}
 		} break;
-		default: { throw("Illegal right operand! - fn() = load, 11 XXX ..."); } break;
 		}
 	} break;
-	default: {
-		throw("Illegal opcode! - fn() = load, .. XXX XXX");
-	} break;
-	}
-}
 
-
-
-void Cpu::arithmetic(const u8 opcode) {
-	static const std::map<u8, u8&> reg_map{
-		{0x07, reg.A}, {0x00, reg.B}, {0x01, reg.C}, {0x02, reg.D},
-		{0x03, reg.E}, {0x04, reg.H}, {0x05, reg.L}
-	};
-
-	const u8 code = ((opcode & 0xC0) >> 6);
-	const u8 left_opr = ((opcode & 0x38) >> 3);
-	const u8 right_opr = (opcode & 0x07);
-
-	switch (code) {
-	case 0x00: {
-		switch (right_opr) {
-		case 0x04: {
-			switch (left_opr) {
-			case 0x06: {														// inc (hl)
-				inc(read_byte(reg.HL));
-				write_byte(reg.HL, read_byte(reg.HL) + 1);
-			} break;
-			default: { inc_reg(reg_map.at(left_opr)); } break;					// inc r
-			}
-		} break;
-		case 0x05: {
-			switch (left_opr) {
-			case 0x06: {														// dec (hl)
-				dec(read_byte(reg.HL));
-				write_byte(reg.HL, read_byte(reg.HL) - 1);
-			} break;
-			default: { dec_reg(reg_map.at(left_opr)); } break;					// dec r
-			}
-		} break;
-		default: { throw("Illegal right operand! - fn() = arithmetic, 00 XXX ..."); } break;
-		}
-	} break;
 	case 0x02: {
 		switch (right_opr) {
 		case 0x06: {
@@ -227,8 +233,69 @@ void Cpu::arithmetic(const u8 opcode) {
 		} break;
 		}
 	} break;
+
 	case 0x03: {
 		switch (right_opr) {
+		case 0x00: {
+			switch (left_opr) {
+			case 0x00: { ret_cp(0x00); } break;	// ret cc 
+			case 0x01: { ret_cp(0x01); } break;	// ret cc
+			case 0x02: { ret_cp(0x02); } break;	// ret cc
+			case 0x03: { ret_cp(0x03); } break;	// ret cc
+			case 0x04: { write_byte(0xFF00 + read_byte_inc_PC(), reg.A); } break;
+			case 0x05: { add_sp(); } break;		// add sp, e
+			case 0x06: { reg.A = read_byte(0xFF00 + read_byte_inc_PC()); } break;
+			case 0x07: { load_hl(); } break;	// ldhl sp, e
+			}
+		} break;
+		case 0x01: {
+			switch (left_opr) {
+			case 0x00: { pop(reg.BC); } break;	// pop bc
+			case 0x01: { pop(reg.PC); } break;	// ret
+			case 0x02: { pop(reg.DE); } break;
+			case 0x03: { reti(); } break;	// reti
+			case 0x04: { pop(reg.HL); } break;
+			case 0x05: { reg.PC = reg.HL; } break;	// jp hl
+			case 0x06: { pop(reg.AF); } break;
+			case 0x07: { reg.SP = reg.HL; } break;	// ld sp, hl
+			}
+		} break;
+		case 0x02: {
+			switch (left_opr) {
+			case 0x00: { jump_cp(0x00); } break;	// jp cc, nn
+			case 0x01: { jump_cp(0x01); } break;	// jp cc, nn
+			case 0x02: { jump_cp(0x02); } break;	// jp cc, nn
+			case 0x03: { jump_cp(0x03); } break;	// jp cc, nn
+			case 0x04: { write_byte(0xFF00 + reg.C, reg.A); } break;
+			case 0x05: { reg.A = read_byte(read_word_inc_PC()); } break;
+			case 0x06: { reg.A = read_byte(0xFF00 + reg.C); } break;
+			case 0x07: { write_byte(read_word_inc_PC(), reg.A); } break;
+			}
+		} break;
+		case 0x03: {
+			switch (left_opr) {
+			case 0x00: { reg.PC = read_word_inc_PC(); } break;	// jp nn
+			case 0x06: { reg.IME = false; } break;
+			case 0x07: { reg.IME = true; } break;
+			}
+		} break;
+		case 0x04: {
+			switch (left_opr) {
+			case 0x00: { call_cp(0x00); } break;	// call cc, nn
+			case 0x01: { call_cp(0x01); } break;	// call cc, nn
+			case 0x02: { call_cp(0x02); } break;	// call cc, nn
+			case 0x03: { call_cp(0x03); } break;	// call cc, nn
+			}
+		} break;
+		case 0x05: {
+			switch (left_opr) {
+			case 0x00: { push(reg.BC); } break;	// push bc
+			case 0x01: { call(); } break;	// call nn
+			case 0x02: { push(reg.DE); } break;	// push de
+			case 0x04: { push(reg.HL); } break;	// push hl
+			case 0x06: { push(reg.AF); } break;	// push af
+			}
+		} break;
 		case 0x06: {
 			switch (left_opr) {
 			case 0x00: { add_byte(read_byte_inc_PC()); } break;					// add a, n
@@ -241,15 +308,16 @@ void Cpu::arithmetic(const u8 opcode) {
 			case 0x07: { cp_byte(read_byte_inc_PC()); } break;					// cp  a, n
 			}
 		} break;
-		default: { throw("Illegal right operand! - fn() = arithmetic, 11 XXX ..."); } break;
+		case 0x07: {
+			restart(left_opr);
+		} break;
 		}
 	} break;
-	default: { throw("Illegal opcode! - fn() = arithmetic, .. XXX XXX"); } break;
 	}
 }
 
 
-void Cpu::bitop(const u8 opcode) {
+void Cpu::extended_op(const u8 opcode) {
 	static const std::map<u8, u8&> reg_map{
 	{0x07, reg.A}, {0x00, reg.B}, {0x01, reg.C}, {0x02, reg.D},
 	{0x03, reg.E}, {0x04, reg.H}, {0x05, reg.L}
@@ -288,18 +356,21 @@ void Cpu::bitop(const u8 opcode) {
 		} break;
 		}
 	} break;
+
 	case 0x01: {
 		switch (right_opr) {
 		case 0x06: { bit(read_byte(reg.HL), left_opr); } break;
 		default: { bit(reg_map.at(right_opr), left_opr); } break;
 		}
 	} break;
+
 	case 0x02: {
 		switch (right_opr) {
 		case 0x06: { write_byte(reg.HL, res(read_byte(reg.HL), left_opr)); } break;
 		default: { reg_map.at(right_opr) = res(reg_map.at(right_opr), left_opr); } break;
 		}
 	} break;
+
 	case 0x03: {
 		switch (right_opr) {
 		case 0x06: { write_byte(reg.HL, set(read_byte(reg.HL), left_opr)); } break;
@@ -309,124 +380,6 @@ void Cpu::bitop(const u8 opcode) {
 	}
 }
 
-
-void Cpu::wordop(const u8 opcode) {
-	const u8 code = ((opcode & 0xC0) >> 6);
-	const u8 left_opr = ((opcode & 0x38) >> 3);
-	const u8 right_opr = (opcode & 0x07);
-
-	switch (code) {
-	case 0x00: {
-		switch (right_opr) {
-		case 0x00: {
-			switch (left_opr) {
-			case 0x00: { /*NOP*/ } break;					// nop
-			case 0x01: { store_sp(); } break;				// ld (nn), sp
-			case 0x02: { stop_cpu(); } break;
-			case 0x03: { jump_relative(); } break;			// jr e
-			case 0x04: { jump_relative_cp(0x00); } break;	// jr cc, e
-			case 0x05: { jump_relative_cp(0x01); } break;	// jr cc, e
-			case 0x06: { jump_relative_cp(0x02); } break;	// jr cc, e
-			case 0x07: { jump_relative_cp(0x03); } break;	// jr cc, e
-			}
-		} break;
-		case 0x01: {
-			switch (left_opr) {
-			case 0x00: { reg.BC = read_word_inc_PC(); } break;	// ld bc, nn
-			case 0x01: { add_word(reg.BC); } break;
-			case 0x02: { reg.DE = read_word_inc_PC(); } break;	// ld de, nn
-			case 0x03: { add_word(reg.DE); } break;
-			case 0x04: { reg.HL = read_word_inc_PC(); } break;	// ld hl, nn
-			case 0x05: { add_word(reg.HL); } break;
-			case 0x06: { reg.SP = read_word_inc_PC(); } break;	// ld sp, nn
-			case 0x07: { add_word(reg.SP); } break;
-			}
-		} break;
-		case 0x03: {
-			switch (left_opr) {
-			case 0x00: { ++reg.BC; } break;
-			case 0x01: { --reg.BC; } break;
-			case 0x02: { ++reg.DE; } break;
-			case 0x03: { --reg.DE; } break;
-			case 0x04: { ++reg.HL; } break;
-			case 0x05: { --reg.HL; } break;
-			case 0x06: { ++reg.SP; } break;
-			case 0x07: { --reg.SP; } break;
-			}
-		} break;
-		case 0x07: {
-			switch (left_opr) {
-			case 0x04: { daa(); } break;
-			case 0x05: { cpl(); } break;
-			case 0x06: { scf(); } break;
-			case 0x07: { ccf(); } break;
-			}
-		} break;
-		}
-	} break;
-	case 0x03: {
-		switch (right_opr) {
-		case 0x00: {
-			switch (left_opr) {
-			case 0x00: { ret_cp(0x00); } break;	// ret cc 
-			case 0x01: { ret_cp(0x01); } break;	// ret cc
-			case 0x02: { ret_cp(0x02); } break;	// ret cc
-			case 0x03: { ret_cp(0x03); } break;	// ret cc
-			case 0x05: { add_sp(); } break;		// add sp, e
-			case 0x07: { load_hl(); } break;	// ldhl sp, e
-			}
-		} break;
-		case 0x01: {
-			switch (left_opr) {
-			case 0x00: { pop(reg.BC); } break;	// pop bc
-			case 0x01: { pop(reg.PC); } break;	// ret
-			case 0x02: { pop(reg.DE); } break;
-			case 0x03: {} break;	// reti
-			case 0x04: { pop(reg.HL); } break;
-			case 0x05: { reg.PC = reg.HL; } break;	// jp hl
-			case 0x06: { pop(reg.AF); } break;
-			case 0x07: { reg.SP = reg.HL; } break;	// ld sp, hl
-			}
-		} break;
-		case 0x02: {
-			switch (left_opr) {
-			case 0x00: { jump_cp(0x00); } break;	// jp cc, nn
-			case 0x01: { jump_cp(0x01); } break;	// jp cc, nn
-			case 0x02: { jump_cp(0x02); } break;	// jp cc, nn
-			case 0x03: { jump_cp(0x03); } break;	// jp cc, nn
-			}
-		} break;
-		case 0x03: {
-			switch (left_opr) {
-			case 0x00: { reg.PC = read_word_inc_PC(); } break;	// jp nn
-			case 0x06: { di(); } break;
-			case 0x07: { ei(); } break;
-			}
-		} break;
-		case 0x04: {
-			switch (left_opr) {
-			case 0x00: { call_cp(0x00); } break;	// call cc, nn
-			case 0x01: { call_cp(0x01); } break;	// call cc, nn
-			case 0x02: { call_cp(0x02); } break;	// call cc, nn
-			case 0x03: { call_cp(0x03); } break;	// call cc, nn
-			}
-		} break;
-		case 0x05: {
-			switch (left_opr) {
-			case 0x00: { push(reg.BC); } break;	// push bc
-			case 0x01: { call(); } break;	// call nn
-			case 0x02: { push(reg.DE); } break;	// push de
-			case 0x04: { push(reg.HL); } break;	// push hl
-			case 0x06: { push(reg.AF); } break;	// push af
-			}
-		} break;
-		case 0x07: {
-			restart(left_opr);
-		} break;
-		}
-	} break;
-	}
-}
 
 /* ------------ 8bit argument methods ------------
 *  -----------------------------------------------
@@ -505,35 +458,27 @@ void Cpu::cp_byte(const u8 value) {
 }
 
 
-void Cpu::inc(const u8 value) {
+u8 Cpu::inc(const u8 value) {
 	set_flags(
 		0x0E,
 		((value + 0x01) == 0x00),
 		CLEAR_BIT,
 		((((value & 0x0F) + 0x01) & 0x10) == 0x10),
 		UNUSED);
+
+	return value + 1;
 }
 
 
-void Cpu::inc_reg(u8& param) {
-	inc(param);
-	++param;
-}
-
-
-void Cpu::dec(const u8 value) {
+u8 Cpu::dec(const u8 value) {
 	set_flags(
 		0x0E,
 		((value - 0x01) == 0x00),
 		SET_BIT,
 		((((value & 0x0F) - 0x01) & 0x10) == 0x10),
 		UNUSED);
-}
 
-
-void Cpu::dec_reg(u8& param) {
-	dec(param);
-	--param;
+	return value - 1;
 }
 
 
@@ -709,16 +654,6 @@ void Cpu::add_sp() {
 }
 
 
-void Cpu::inc_word(u16& to, const u16& /*unused*/) {
-	++to;
-}
-
-
-void Cpu::dec_word(u16& to, const u16& /*unused*/) {
-	--to;
-}
-
-
 void Cpu::push(const u16 param) {
 	write_byte(--reg.SP, static_cast<u8>(param >> 8));
 	write_byte(--reg.SP, static_cast<u8>(param));
@@ -852,10 +787,6 @@ void Cpu::restart(const u8 code) {
 */
 
 
-void Cpu::load_imm_off() {
-	write_byte(0xFF00 + read_byte_inc_PC(), reg.A);
-}
-
 
 void Cpu::store_sp() {
 	const u16 address = read_word_inc_PC();
@@ -864,24 +795,11 @@ void Cpu::store_sp() {
 }
 
 
-void Cpu::load_sp_hl() {
-	reg.SP = reg.HL;
-}
 
 
-void Cpu::load_memory_inc() {
-	write_byte(reg.HL++, reg.A);
-}
 
 
-void Cpu::load_memory_dec() {
-	write_byte(reg.HL--, reg.A);
-}
 
-
-void Cpu::load_memory_imm() {
-	write_byte(read_word_inc_PC(), reg.A);
-}
 
 
 void Cpu::daa() {
@@ -940,17 +858,6 @@ void Cpu::scf() {
 }
 
 
-void Cpu::nop() {}
-
-
-void Cpu::jump() {
-	reg.PC = read_word_inc_PC();
-}
-
-
-void Cpu::jump_hl() {
-	reg.PC = reg.HL;
-}
 
 
 void Cpu::jump_relative() {
@@ -975,8 +882,8 @@ void Cpu::call() {
 
 
 void Cpu::reti() {
-	ret();
-	interrupt = true;
+	pop(reg.PC);
+	reg.IME = true;
 }
 
 
@@ -991,15 +898,5 @@ void Cpu::stop_cpu() {
 		throw("Illegal opcode! fn() = stop_cpu");
 	}
 
-	// implement!
-}
-
-
-void Cpu::di() {
-	// implement!
-}
-
-
-void Cpu::ei() {
 	// implement!
 }

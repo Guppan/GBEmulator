@@ -5,6 +5,9 @@ Bus::Bus() :
 	cartridge{}
 {
 	cartridge.connect_to_bus(this);
+	cpu.connect_to_bus(this);
+	work_ram.connect_to_bus(this);
+	ppu.connect_to_bus(this);
 }
 
 
@@ -20,8 +23,8 @@ u8 Bus::read_byte(const u16 address) {
 	else if (address >= 0xA000 && address < 0xC000) {	// Read from cartridge ram
 		data = cartridge.read_byte(address);
 	}
-	else if (address >= 0xC000 && address <= 0xFFFF) {
-
+	else if (address >= 0xC000 && address <= 0xFFFF) {	// Read from internal ram
+		data = work_ram.read_byte(address);
 	}
 
 	return data;
@@ -39,11 +42,9 @@ void Bus::write_byte(const u16 address, const u8 data) {
 		cartridge.write_byte(address, data);
 	}
 	else if (address >= 0xC000 && address <= 0xFFFF) {
-
+		work_ram.write_byte(address, data);
 	}
 }
-
-// cpu read_byte(0x0000) -> bus read_byte(0x0000) -> cartridge read_from_rom(0x0000)
 
 
 // FFE0 - FFFF	internal cpu ram

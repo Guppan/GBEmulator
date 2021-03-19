@@ -18,13 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Memory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Cpu.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OpParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Bus.cpp">
@@ -36,18 +30,18 @@
     <ClCompile Include="MBC1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InternalRam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Ppu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Memory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Typedefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OpParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Bus.h">
@@ -65,12 +59,15 @@
     <ClInclude Include="Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InternalRam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ppu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Cpu.txt">
-      <Filter>Resource Files</Filter>
-    </Text>
-    <Text Include="opcodes.txt">
       <Filter>Resource Files</Filter>
     </Text>
     <Text Include="cycles.txt">

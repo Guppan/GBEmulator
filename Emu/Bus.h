@@ -2,6 +2,9 @@
 #define BUS_H
 
 #include "Cartridge.h"
+#include "Cpu.h"
+#include "InternalRam.h"
+#include "Ppu.h"
 #include "Typedefs.h"
 
 /*
@@ -20,6 +23,9 @@ public:
 	void write_byte(const u16 address, const u8 data);
 private:
 	Cartridge cartridge;
+	Cpu cpu;
+	InternalRam work_ram;
+	Ppu ppu;
 };
 
 

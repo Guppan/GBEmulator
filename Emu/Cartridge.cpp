@@ -41,7 +41,7 @@ void Cartridge::load_cartridge(const std::string& file_path) {
 
 
 // Read a byte from either rom or ram.
-u8 Cartridge::read_byte(const u16 address) {
+u8 Cartridge::read_byte(const u16 address) const {
 	u8 data = 0x00;
 
 	if (address >= 0x000 && address < 0x8000) {
@@ -97,7 +97,7 @@ void Cartridge::set_ram_size(const u8 data) {
 
 
 // Read from static rom bank 0 or the currently selected extended rom bank.
-u8 Cartridge::read_from_rom(const u16 address) {
+u8 Cartridge::read_from_rom(const u16 address) const {
 	u8 data = 0x00;
 
 	if (address >= 0x0000 && address < 0x4000) { // Read from static rom bank 0.
@@ -112,7 +112,7 @@ u8 Cartridge::read_from_rom(const u16 address) {
 
 
 // Read from the ram bank currently selected.
-u8 Cartridge::read_from_ram(const u16 address) {
+u8 Cartridge::read_from_ram(const u16 address) const {
 	u8 data = 0x00;
 
 	if (mapper->get_ram_enable()) {

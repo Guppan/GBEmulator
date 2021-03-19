@@ -3,9 +3,6 @@
 
 #include "Device.h"
 
-#include <functional>
-
-class OpParser; // forward declaration.
 
 struct Register {
 	union {
@@ -48,61 +45,44 @@ struct Register {
 
 	u16 SP; // Stack pointer
 	u16 PC; // Program counter
+
+	bool IME; // Interrupt master enable
 };
 
-struct ConstNums {
-	u8  b0, b1, b2, b3, b4, b5, b6, b7;
-	u16 w0, w1, w2, w3, w4, w5, w6, w7;
-};
-
-class Cpu : Device
+class Cpu : public Device
 {
 public:
 	Cpu();
-
+	
 	void read_opcode();
 
-	u8 read_byte(const u16) override;
+	u8 read_byte(const u16) const override;
 	void write_byte(const u16, const u8) override;
 #ifndef _DEBUG
 private:
 #endif
-	friend OpParser;
-
 	Register reg;
 	unsigned clock_cyles;
-
-	bool halt;
-	bool interrupt;
-
-	std::function<void()> op_matrix[0x200];
 	unsigned cycle_matrix[0x200];
-	
-	void load_instruction_array();
 
+	void init_cycle_matrix();
 	void set_flags(const u8&, bool, bool, bool, bool);
 	
 	u8 read_byte_inc_PC();
 	u16 read_word_inc_PC();
 
-	void load(const u8);
-	void arithmetic(const u8);
-	void bitop(const u8);
-	void wordop(const u8);
+	void regular_op(const u8);
+	void extended_op(const u8);
 
-	// -------- Instruction Methods --------
-	// Methods used to construct all the 500 instructions.
-	// 8bit arguments
+	// ------ Methods used by instructions -------
 	void add_byte(const u8);
 	void sub_byte(const u8);
 	void and_byte(const u8);
 	void or_byte(const u8);
 	void xor_byte(const u8);
 	void cp_byte(const u8);
-	void inc(const u8);
-	void inc_reg(u8&);
-	void dec(const u8);
-	void dec_reg(u8&);
+	u8 inc(const u8);
+	u8 dec(const u8);
 
 	u8 swap(const u8);
 	u8 rotate(const u8, const u8);
@@ -112,12 +92,9 @@ private:
 	u8 set(const u8, const u8);
 	u8 res(const u8, const u8);
 
-	// 16bit arguments
 	void load_hl();
 	void add_word(const u16);
 	void add_sp();
-	void inc_word(u16&, [[maybe_unused]] const u16&);
-	void dec_word(u16&, [[maybe_unused]] const u16&);
 	void push(const u16);
 	void pop(u16&);
 	void jump_cp(const u8);
@@ -126,23 +103,13 @@ private:
 	void ret_cp(const u8);
 	void restart(const u8);
 
-	// no arguments
-	void load_imm_off();
 	void store_sp();
-	void load_sp_hl();
-	void load_memory_inc();
-	void load_memory_dec();
-	void load_memory_imm();
 	void daa();
 	void cpl();
 	void ccf();
 	void scf();
-	void nop();
-	void jump();
-	void jump_hl();
 	void jump_relative();
 	void call();
-	void ret();
 	void reti();
 	void halt_cpu(); //implement!
 	void stop_cpu(); // implement!
@@ -150,4 +117,4 @@ private:
 	void ei(); // implement!
 };
 
-#endif
+#endif // CPU_H
