@@ -3,7 +3,9 @@
 
 #include <fstream>
 #include <map>
+
 #include <iostream>
+#include <cstdio>
 
 // ------ Constants ------------------------------------------
 // Name of the text file containing cycles for instructions.
@@ -21,53 +23,117 @@ const bool CLEAR_BIT{ false };
 
 Cpu::Cpu() :
 	reg{},
-	clock_cyles{}
+	cycle_info{},
+	cycle_counter{}
 {
+	reset_device();
 }
 
 
-void Cpu::read_opcode() {
-
-	/*
-	* läs instruktion från adress 'PC'.
-	* unsigned char opcode = memory.read_byte(reg.PC);
-	*	
-	* ifall opcode = 0xCB, 0x01 så är instruktionen ett word.
-	* 
-	* if (opcode = 0xCB){
-	* 
-	* }
-	* else{
-	* 
-	* }
-
-	*/
+unsigned Cpu::fetch_execute() {
+	//printf("PC : %04X    | ", reg.PC);
 	u8 opcode = read_byte_inc_PC();
+	u16 instruction_cycle = 0x0000;
+	//printf("PC : %04X    | Opcode : %02X   | ", reg.PC, opcode);
+	// Execute instruction.
 	if (opcode != 0xCB) {
-
+		// Execute a regular instruction.
+		instruction_cycle = opcode;
+		regular_op(opcode);
 	}
 	else {
+		// Execute an extended instruction.
 		opcode = read_byte_inc_PC();
+		instruction_cycle = 0x0100 + opcode;
+		extended_op(opcode);
 	}
+	
+	// Calculate total instruction time.
+	unsigned instruction_time = cycle_info.cycle_matrix[instruction_cycle];
+	if (cycle_info.is_extended_cycle) {
+		instruction_time += cycle_info.extended_cycle;
+		cycle_info.is_extended_cycle = false;
+	}
+	/*
+	printf("PC : %04X\n", reg.PC);
+	printf("AF= %04X   LCDC=%04X\n", reg.AF, read_byte(0xFF40));
+	printf("BC= %04X   STAT=%04X\n", reg.BC, read_byte(0xFF41));
+	printf("DE= %04X   LY=  %04X\n", reg.DE, read_byte(0xFF44));
+	printf("HL= %04X   SP=  %04X\n", reg.HL, reg.SP);
+	*/
+	return instruction_time;
+}
+
+
+void Cpu::tick_cpu() {
+	unsigned instruction_time = fetch_execute();
+	cycle_counter += instruction_time;
+	
+	// Emulate all the cycles the instruction takes.
+	while (instruction_time > 0) {
+		// interrupt might happend.
+
+		--instruction_time;
+	}
+}
+
+
+void Cpu::reset_device() {
+	// Reset registers
+	reg.AF = 0x01B0;
+	reg.BC = 0x0013;
+	reg.DE = 0x00D8;
+	reg.HL = 0x014D;
+	reg.SP = 0xFFFE;
+	reg.PC = 0x0100;
+	reg.IME = false;
+
+	// Reset cycle information
+	cycle_info.is_extended_cycle = false;
+	cycle_info.extended_cycle = 0;
 }
 
 
 u8 Cpu::read_byte(const u16 address) const {
-	return bus->read_byte(address);
+	u8 data = 0x00;
+
+	if (address < 0xFE00) {
+		data = bus->read_byte(address);
+	}
+	else if (address < 0xFEA0) {
+		// OAM in ppu
+	}
+	else {
+		data = cpu_ram[address - 0xFEA0];
+	}
+
+	return data;
 }
+
 
 void Cpu::write_byte(const u16 address, const u8 data) {
-	bus->write_byte(address, data);
+	if (address < 0xFE00) {
+		bus->write_byte(address, data);
+	}
+	else if (address < 0xFEA0) {
+		// write to OAM in ppu
+	}
+	else {
+		cpu_ram[address - 0xFEA0] = data;
+	}
 }
 
 
 
-void Cpu::init_cycle_matrix() {
+void Cpu::init_cycle_info() {
 	std::ifstream file{ CYCLE_FILE , std::ios::in};
 
 	for (u16 idx = 0x0000; idx < 0x0200; ++idx) {
-		file >> cycle_matrix[idx];
+		file >> cycle_info.cycle_matrix[idx];
 	}
+
+	cycle_info.is_extended_cycle = false;
+	cycle_info.extended_cycle = 0;
 }
 
 
@@ -87,8 +153,8 @@ u8 Cpu::read_byte_inc_PC() {
 
 
 u16 Cpu::read_word_inc_PC() {
-	u16 word = read_byte_inc_PC();
-	word |= (read_byte_inc_PC() << 8);
+	u16 word = read_byte(reg.PC++);
+	word |= (read_byte(reg.PC++) << 8);
 	return word;
 }
 
@@ -589,7 +655,7 @@ u8 Cpu::res(const u8 param, const u8 bit) {
 */
 
 
-
+// KAN BEHÖVA VARA 2s-complement!
 void Cpu::load_hl() {
 	u8 immediate = read_byte_inc_PC();
 	const bool sign = ((immediate & 0x80) == 0x80);
@@ -628,6 +694,7 @@ void Cpu::add_word(const u16 param) {
 }
 
 
+// KAN BEHÖVA VARA 2s-complement!
 void Cpu::add_sp() {
 	u8 immediate = read_byte_inc_PC();
 	const bool sign = ((immediate & 0x80) == 0x80);
@@ -671,7 +738,8 @@ void Cpu::jump_cp(const u8 code) {
 	auto help_fn = [this, &address](const u8& flag, const u8& val) {
 		if (flag == val) {
 			reg.PC = address;
-			clock_cyles += 4;
+			cycle_info.is_extended_cycle = true;
+			cycle_info.extended_cycle = 4;
 		}
 	};
 
@@ -696,7 +764,8 @@ void Cpu::jump_relative_cp(const u8 code) {
 	auto help_fn = [this](const u8& flag, const u8& val) {
 		if (flag == val) {
 			jump_relative();
-			clock_cyles += 4;
+			cycle_info.is_extended_cycle = true;
+			cycle_info.extended_cycle = 4;
 		}
 		else {
 			reg.PC += 1;
@@ -724,7 +793,8 @@ void Cpu::call_cp(const u8 code) {
 	auto help_fn = [this](const u8& flag, const u8& val) {
 		if (flag == val) {
 			call();
-			clock_cyles += 12;
+			cycle_info.is_extended_cycle = true;
+			cycle_info.extended_cycle = 12;
 		}
 		else {
 			reg.PC += 2;
@@ -752,7 +822,8 @@ void Cpu::ret_cp(const u8 code) {
 	auto help_fn = [this](const u8& flag, const u8& val) {
 		if (flag == val) {
 			pop(reg.PC);
-			clock_cyles += 12;
+			cycle_info.is_extended_cycle = true;
+			cycle_info.extended_cycle = 12;
 		}
 	};
 
@@ -858,12 +929,10 @@ void Cpu::scf() {
 }
 
 
-
-
 void Cpu::jump_relative() {
-	u8 immediate = read_byte_inc_PC();
-	const bool sign = ((immediate & 0x80) == 0x80);
-	immediate &= 0x7F;
+	u8 immediate = ~read_byte_inc_PC();
+	const bool sign = ((immediate & 0x80) == 0x00);
+	immediate += 0x01;
 
 	if (sign) { // Subtract immediate.
 		reg.PC -= static_cast<u16>(immediate);

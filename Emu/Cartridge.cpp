@@ -4,12 +4,18 @@
 #include <fstream>
 #include <iostream>
 
+// -------- Constants ----------
+const u16 ROM_BANK_START = 0x4000;
+const u16 ROM_PAGE_SIZE =  0x4000;
+const u16 RAM_BANK_START = 0xA000;
+const u16 RAM_PAGE_SIZE =  0x2000;
+// -----------------------------
 
 Cartridge::Cartridge() :
 	rom{ nullptr },
 	ram{ nullptr },
 	mapper{ nullptr },
-	rom_offset{ 0x4000 },
+	rom_offset{ ROM_BANK_START },
 	ram_offset{}
 {}
 
@@ -40,14 +46,23 @@ void Cartridge::load_cartridge(const std::string& file_path) {
 }
 
 
+void Cartridge::reset_device() {
+	rom = nullptr;
+	ram = nullptr;
+	mapper = nullptr;
+	rom_offset = ROM_BANK_START;
+	ram_offset = 0x0000;
+}
+
+
 // Read a byte from either rom or ram.
 u8 Cartridge::read_byte(const u16 address) const {
 	u8 data = 0x00;
 
-	if (address >= 0x000 && address < 0x8000) {
+	if (address < 0x8000) {
 		data = read_from_rom(address);
 	}
-	else if (address >= 0xA000 && address < 0xC000) {
+	else {
 		data = read_from_ram(address);
 	}
 
@@ -57,10 +72,10 @@ u8 Cartridge::read_byte(const u16 address) const {
 
 // Write a byte to either the mapper control or ram.
 void Cartridge::write_byte(const u16 address, const u8 data) {
-	if (address >= 0x0000 && address < 0x8000) {
+	if (address < 0x8000) {
 		write_to_mapper(address, data);
 	}
-	else if (address >= 0xA000 && address < 0xC000) {
+	else {
 		write_to_ram(address, data);
 	}
 }
@@ -100,11 +115,11 @@ void Cartridge::set_ram_size(const u8 data) {
 u8 Cartridge::read_from_rom(const u16 address) const {
 	u8 data = 0x00;
 
-	if (address >= 0x0000 && address < 0x4000) { // Read from static rom bank 0.
+	if (address < ROM_BANK_START) { // Read from static rom bank 0.
 		data = rom[address];
 	}
-	else if (address >= 0x4000 && address < 0x8000) { // Read from extended rom bank.
-		data = rom[rom_offset + (address - 0x4000)];
+	else { // Read from extended rom bank.
+		data = rom[rom_offset + (address - ROM_BANK_START)];
 	}
 
 	return data;
@@ -116,7 +131,7 @@ u8 Cartridge::read_from_ram(const u16 address) const {
 	u8 data = 0x00;
 
 	if (mapper->get_ram_enable()) {
-		data = ram[ram_offset + (address - 0xA000)];
+		data = ram[ram_offset + (address - RAM_BANK_START)];
 	}
 
 	return data;
@@ -133,15 +148,15 @@ void Cartridge::write_to_mapper(const u16 address, const u8 data) {
 // Write to the ram bank currently selected.
 void Cartridge::write_to_ram(const u16 address, const u8 data) {
 	if (mapper->get_ram_enable()) {
-		ram[ram_offset + (address - 0xA000)] = data;
+		ram[ram_offset + (address - RAM_BANK_START)] = data;
 	}
 }
 
 
 // Updates both rom and ram offsets.
 void Cartridge::update_offset() {
-	rom_offset = 0x4000 * mapper->get_rom_bank();
-	ram_offset = 0x2000 * mapper->get_ram_bank();
+	rom_offset = ROM_PAGE_SIZE * mapper->get_rom_bank();
+	ram_offset = RAM_PAGE_SIZE * mapper->get_ram_bank();
 }
 
 // behöver en offset till bank.

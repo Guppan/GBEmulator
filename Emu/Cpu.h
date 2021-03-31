@@ -54,18 +54,27 @@ class Cpu : public Device
 public:
 	Cpu();
 	
-	void read_opcode();
+	unsigned fetch_execute();
+	void tick_cpu();
 
+	void reset_device() override;
 	u8 read_byte(const u16) const override;
 	void write_byte(const u16, const u8) override;
 #ifndef _DEBUG
 private:
 #endif
 	Register reg;
-	unsigned clock_cyles;
-	unsigned cycle_matrix[0x200];
+	u8 cpu_ram[0x160];
 
-	void init_cycle_matrix();
+	struct CycleInfo {
+		unsigned cycle_matrix[0x200];
+		bool is_extended_cycle;
+		unsigned extended_cycle;
+	} cycle_info;
+
+	unsigned cycle_counter;
+
+	void init_cycle_info();
 	void set_flags(const u8&, bool, bool, bool, bool);
 	
 	u8 read_byte_inc_PC();

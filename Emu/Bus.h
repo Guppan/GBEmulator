@@ -3,8 +3,10 @@
 
 #include "Cartridge.h"
 #include "Cpu.h"
-#include "InternalRam.h"
 #include "Ppu.h"
+#include "RegRam.h"
+#include "VideoRam.h"
+#include "WorkRam.h"
 #include "Typedefs.h"
 
 /*
@@ -19,13 +21,18 @@ public:
 	Bus();
 	~Bus() = default;
 
+	Cpu* get_cpu() { return &cpu; }
+	Cartridge* get_cart() { return &cartridge; }
+
 	u8 read_byte(const u16 address);
 	void write_byte(const u16 address, const u8 data);
 private:
 	Cartridge cartridge;
 	Cpu cpu;
-	InternalRam work_ram;
 	Ppu ppu;
+	RegRam reg_ram;
+	WorkRam work_ram;
+	VideoRam video_ram;
 };
 
 

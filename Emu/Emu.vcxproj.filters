@@ -30,10 +30,16 @@
     <ClCompile Include="MBC1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="InternalRam.cpp">
+    <ClCompile Include="Ppu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Ppu.cpp">
+    <ClCompile Include="WorkRam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoRam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RegRam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,10 +65,19 @@
     <ClInclude Include="Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InternalRam.h">
+    <ClInclude Include="Ppu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Ppu.h">
+    <ClInclude Include="Ram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WorkRam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoRam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RegRam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,6 +86,9 @@
       <Filter>Resource Files</Filter>
     </Text>
     <Text Include="cycles.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="memory_map.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

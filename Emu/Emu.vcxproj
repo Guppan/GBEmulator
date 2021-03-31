@@ -86,9 +86,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,7 +150,9 @@
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Cpu.cpp" />
-    <ClCompile Include="InternalRam.cpp" />
+    <ClCompile Include="RegRam.cpp" />
+    <ClCompile Include="VideoRam.cpp" />
+    <ClCompile Include="WorkRam.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MBC1.cpp" />
     <ClCompile Include="Ppu.cpp" />
@@ -159,15 +162,19 @@
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="Cpu.h" />
     <ClInclude Include="Device.h" />
-    <ClInclude Include="InternalRam.h" />
+    <ClInclude Include="RegRam.h" />
+    <ClInclude Include="VideoRam.h" />
+    <ClInclude Include="WorkRam.h" />
     <ClInclude Include="Mapper.h" />
     <ClInclude Include="MBC1.h" />
     <ClInclude Include="Ppu.h" />
+    <ClInclude Include="Ram.h" />
     <ClInclude Include="Typedefs.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Cpu.txt" />
     <Text Include="cycles.txt" />
+    <Text Include="memory_map.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

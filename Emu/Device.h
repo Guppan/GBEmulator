@@ -21,6 +21,7 @@ public:
 		bus = system_bus;
 	}
 
+	virtual void reset_device() = 0;
 	virtual u8 read_byte(const u16 address) const = 0;
 	virtual void write_byte(const u16 address, const u8 data) = 0;
 protected:

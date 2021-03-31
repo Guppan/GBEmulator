@@ -1,0 +1,14 @@
+Description of the emulations memory map.
+
+The emulator has 64kiB of addressable memory divided into several regions.
+
+Address range	| Type	| Size (Bytes)	| Residing region
+----------------------------------------------------------
+0x0000 - 0x7FFF | Rom	| 32 768		| Cartridge.h
+0x8000 - 0x9FFF | Ram	| 8192			| VideoRam.h
+0xA000 - 0xBFFF | Ram	| 8192			| Cartridge.h
+0xC000 - 0xFDFF | Ram	| 15 872		| WorkRam.h
+0xFE00 - 0xFFFF | Ram	| 512			| RegRam.h
+----------------------------------------------------------
+
+
