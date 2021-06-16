@@ -13,6 +13,8 @@
 #endif
 
 
+
+
 int main() {
 	using namespace std;
 
@@ -53,17 +55,53 @@ int main() {
 	std::cout << ms_double.count() << "ms";
 	*/
 
+	u8 data[] = {
+		0b11111111, 0b00000000,
+		0b01111110, 0b11111111,
+		0b10000101, 0b10000001,
+		0b10001001, 0b10000011,
+		0b10010011, 0b10000101,
+		0b10100101, 0b10001011,
+		0b11001001, 0b10010111,
+		0b01111110, 0b11111111
+	};
 
+	/*
 	u8 SCX{}, SCY{}, LY{}, PX{};
 
 	cout << "SCX, SCY, LY, PX : ";
-	scanf("%hhx %hhx %hhx %hhx", &SCX, &SCY, &LY, &PX);
+	if (!scanf("%hhx %hhx %hhx %hhx", &SCX, &SCY, &LY, &PX)) {
+		return -1;
+	}
 
-	u16 block = (static_cast<u8>(SCX + PX) >> 3) + 0x20 * (static_cast<u8>(SCY + LY) >> 3);
+	u8 xoff = SCX + PX;													// 152 + 0
+	u8 yoff = SCY + LY;
 
-	printf("((%u + %u) >> 3) = %u\n", SCX, PX, (static_cast<u8>(SCX + PX) >> 3));
+	u8 xpos = 0x07 - (xoff & 0x07);										// 7 - (152 & 7) = 3
+	u8 ypos = ((yoff & 0x07) << 1);
 
-	printf("block = %04X  = %u\n", block, block);
+	printf("xpos : %X\nypos : %X\n", xpos, ypos);
+
+	u8 LSB_color = (data[0 + ypos] & (1 << xpos));
+	u8 MSB_color = (data[0 + ypos + 1] & (1 << xpos));
+
+	u8 pixel_value = ((MSB_color > 0) << 1) | (LSB_color > 0);
+
+	printf("value : %02X\n", pixel_value);
+
+	*/
+	/*
+	int i;
+	cout << "input 1 or 0 : ";
+	cin >> i;
+
+	u16 base = 0x9000;
+
+	base += (i == 1) ? 0x20 * 2 : -0x20 * 2;
+
+	printf("Base = %04X\n", base);
+	*/
+
 
 	return 0;
 }

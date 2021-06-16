@@ -3,70 +3,87 @@
 
 #include "Device.h"
 
+class Ppu; // Forward declaration
 
-struct Register {
-	union {
-		struct {
-			union {	// ----------- Flag register
-				struct {
-					u8 C : 1;	// Carry flag
-					u8 H : 1;	// Half carry flag
-					u8 N : 1;	// Negative flag
-					u8 Z : 1;	// Zero flag
-					u8 unused : 4;
-				} flag;
-				u8 F;
-			};	// ----------------------------
-			u8 A;
-		};
-		u16 AF;
-	};
-	union {
-		struct {
-			u8 C;
-			u8 B;
-		};
-		u16 BC;
-	};
-	union {
-		struct {
-			u8 E;
-			u8 D;
-		};
-		u16 DE;
-	};
-	union {
-		struct {
-			u8 L;
-			u8 H;
-		};
-		u16 HL;
-	};
-
-	u16 SP; // Stack pointer
-	u16 PC; // Program counter
-
-	bool IME; // Interrupt master enable
-};
 
 class Cpu : public Device
 {
 public:
 	Cpu();
+	~Cpu() = default;
+
+	void connect_to_ppu(Ppu*);
 	
 	unsigned fetch_execute();
-	void tick_cpu();
+	void tick_cpu(unsigned);
+	void handle_interrupt();
+	void run_cpu();
 
 	void reset_device() override;
 	u8 read_byte(const u16) const override;
 	void write_byte(const u16, const u8) override;
+
+	u8 read_io(const u16) const;
+	void write_io(const u16, const u8);
 #ifndef _DEBUG
 private:
 #endif
-	Register reg;
+	Ppu* ppu;
+
+	struct {
+		union {
+			struct {
+				union {	// ----------- Flag register
+					struct {
+						u8 C : 1;	// Carry flag
+						u8 H : 1;	// Half carry flag
+						u8 N : 1;	// Negative flag
+						u8 Z : 1;	// Zero flag
+						u8 unused : 4;
+					} flag;
+					u8 F;
+				};	// ----------------------------
+				u8 A;
+			};
+			u16 AF;
+		};
+		union {
+			struct {
+				u8 C;
+				u8 B;
+			};
+			u16 BC;
+		};
+		union {
+			struct {
+				u8 E;
+				u8 D;
+			};
+			u16 DE;
+		};
+		union {
+			struct {
+				u8 L;
+				u8 H;
+			};
+			u16 HL;
+		};
+
+		u16 SP; // Stack pointer
+		u16 PC; // Program counter
+
+		bool IME; // Interrupt master enable
+		bool IME_DELAY; // Delay for interrupt master enable
+	} cpu_reg;
+	
+	struct {
+		u8 IRQ; // 0xFF0F
+		u8 IE;  // 0xFFFF
+	} io_reg;
+
 	u8 cpu_ram[0x160];
 
-	struct CycleInfo {
+	struct {
 		unsigned cycle_matrix[0x200];
 		bool is_extended_cycle;
 		unsigned extended_cycle;
@@ -122,8 +139,6 @@ private:
 	void reti();
 	void halt_cpu(); //implement!
 	void stop_cpu(); // implement!
-	void di(); // implement!
-	void ei(); // implement!
 };
 
 #endif // CPU_H

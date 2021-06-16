@@ -26,12 +26,10 @@ void RegRam::reset_device() {
 
 
 u8 RegRam::read_byte(const u16 address) const {
-	const u16 adjusted_address = address - address_offset;
-	return ram[adjusted_address];
+	return ram[address - address_offset];
 }
 
 
 void RegRam::write_byte(const u16 address, const u8 data) {
-	const u16 adjusted_address = address - address_offset;
-	ram[adjusted_address] = data;
+	ram[address - address_offset] = data;
 }

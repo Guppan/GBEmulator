@@ -5,38 +5,7 @@
 
 #include <memory>
 
-struct PPURegister {
-	union {
-		struct 
-		{
-			u8 BGE   : 1; // Background Enabled
-			u8 SprE  : 1; // Sprite Enabled
-			u8 SprSz : 1; // Sprite Size
-			u8 BGTM  : 1; // Background Tile Map
-			u8 BGWT  : 1; // Background and Window Tileset
-			u8 WinE  : 1; // Window Enabled
-			u8 WinTM : 1; // Window Tile Map
-			u8 LCDP  : 1; // LCD Power
-		};
-		u8 LCDC; // 0xFF40
-	};
-	union {
-		struct {
-			u8 Mode    : 2; // Mode Flag
-			u8 LYCFl   : 1; // LYC = LY Flag
-			u8 M0Intr  : 1; // Mode 0 HBlank Interrupt
-			u8 M1Intr  : 1; // Mode 1 VBlank Interrupt
-			u8 M2Intr  : 1; // Mode 2 OAM Interrupt
-			u8 LYCIntr : 1; // LYC = LY Interrupt
-			u8 Unused  : 1;
-		};
-		u8 STAT; // 0xFF41
-	};
-
-	u8 SCY; // 0xFF42
-	u8 SCX; // 0xFF43
-	u8 LY;  // 0xFF44 - current scanline.
-};
+class Cpu; // Forward declaration
 
 class Ppu : public Device
 {
@@ -44,30 +13,81 @@ public:
 	Ppu();
 	~Ppu() = default;
 
+	void connect_to_cpu(Cpu*);
+
 	void reset_device() override;
 	u8 read_byte(const u16) const override;
 	void write_byte(const u16, const u8) override;
 
 	void tick_ppu(unsigned);
 private:
-	PPURegister ppu_reg;
+	Cpu* cpu;
 
 	struct {
-		u16 BGTM;
-		u8 current_pixel;
-	} scanline;
+		union {
+			struct {
+				u8 BGE : 1; // Background display enable
+				u8 SPRE : 1; // Sprite enable
+				u8 SPRSZ : 1; // Sprite size
+				u8 BGTM : 1; // Background tile map area
+				u8 BGWT : 1; // Background and window tile data area
+				u8 WINE : 1; // Window enable
+				u8 WINTM : 1; // Window tile map area
+				u8 LCDP : 1; // LCD power
+			};
+			u8 LCDC; // 0xFF40
+		};
+		union {
+			struct {
+				u8 LCD_MODE    : 2;
+				u8 LYC_LY_FLAG : 1;
+				u8 HBLANK_INTR : 1;
+				u8 VBLANK_INTR : 1;
+				u8 OAM_INTR    : 1;
+				u8 LYC_LY_INTR : 1;
+				u8 Unused      : 1;
+			};
+			u8 STAT; // 0xFF41
+		};
 
-	unsigned counter;
+		u8 SCY; // 0xFF42
+		u8 SCX; // 0xFF43
+		u8 LY; // 0xFF44
+		u8 LYC; // 0xFF45
 
-	u8 oam[0xA0];
-	unsigned oam_index;
+		u8 BGP; // 0xFF47
+	} ppu_reg;
 
-	std::unique_ptr<u8[]> video_ram;
+	// Buffer with 160x144 pixels.
+	std::unique_ptr<u8[]> pixel_buffer;
+	unsigned buffer_offset;
 
-	std::unique_ptr<u8[]> pixels;
-	unsigned offset;
+	// The ppu's current render mode.
+	u8 render_mode;
+	unsigned dot_counter;
 
+	// Addresses to background and window maps and data.
+	u16 bg_map_address;
+	u16 win_map_address;
+	u16 tile_data_address;
+	bool signed_address;
 
+	// Offsets into a tile.
+	u8 x_offset;
+	u8 y_offset;
+	unsigned line_offset;
+
+	// Line which the ppu is currently processing.
+	u8 lsb_line;
+	u8 msb_line;
+
+	void signal_interrupt(const u8);
+	void stat_interrupt(const u8);
+
+	void update_render_mode();
+	void prepare_scanline();
+	void set_current_line();
+	void add_pixel();
 };
 
 #endif // PPU_H

@@ -10,6 +10,9 @@ Bus::Bus() :
 	reg_ram.connect_to_bus(this);
 	work_ram.connect_to_bus(this);
 	video_ram.connect_to_bus(this);
+
+	cpu.connect_to_ppu(&ppu);
+	ppu.connect_to_cpu(&cpu);
 }
 
 
